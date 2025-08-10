@@ -30,8 +30,8 @@ wrangler secret put OPENAI_API_KEY
 echo "🔑 Setting Qwen API Key..."
 wrangler secret put QWEN_API_KEY
 
-echo "🔑 Setting Claude API Key (optional, for fallback)..."
-wrangler secret put CLAUDE_API_KEY
+# echo "🔑 Setting Claude API Key (optional, for fallback)..."
+# wrangler secret put CLAUDE_API_KEY
 
 echo ""
 echo "✅ All secrets have been set up!"

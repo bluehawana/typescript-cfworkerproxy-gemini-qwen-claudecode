@@ -199,3 +199,33 @@ export interface OpenAIStreamResponse {
     model: string
     choices: OpenAIStreamChoice[]
 }
+export interface QwenMessage {
+    role: 'user' | 'assistant' | 'system'
+    content: string
+}
+
+export interface QwenRequest {
+    model: string
+    input: {
+        messages: QwenMessage[]
+    }
+    parameters: {
+        max_tokens?: number
+        temperature?: number
+        top_p?: number
+        top_k?: number
+    }
+}
+
+export interface QwenResponse {
+    output: {
+        text: string
+        finish_reason?: string
+    }
+    usage?: {
+        input_tokens: number
+        output_tokens: number
+        total_tokens: number
+    }
+    request_id?: string
+}
