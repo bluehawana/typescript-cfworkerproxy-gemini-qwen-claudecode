@@ -84,9 +84,6 @@ async function handleRequest(request) {
             providerUrl = 'https://' + providerUrl
         }
 
-        // 移除末尾的 /v1/messages 因为我们会根据提供商重新构建
-        providerUrl = providerUrl.replace(/\/v1\/messages$/, '')
-
         // 获取自定义x-api-key头
         const apiKey = request.headers.get('x-api-key')
         if (!apiKey) {
@@ -126,8 +123,7 @@ async function handleRequest(request) {
                 // 转换为 Gemini 格式
                 const geminiBody = claudeToGemini(body)
                 processedBody = geminiBody
-                // Gemini URL should end with :generateContent, not include model in URL
-                targetUrl = providerUrl.replace(/:generateContent.*$/, ':generateContent')
+                targetUrl = providerUrl
                 headers = {
                     'Content-Type': 'application/json',
                     'x-goog-api-key': apiKey
@@ -249,7 +245,7 @@ async function handleRequest(request) {
 function claudeToGemini(claudeBody) {
     const contents = claudeBody.messages.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: typeof msg.content === 'string' ? msg.content : msg.content[0]?.text || '' }]
+        parts: [{ text: msg.content }]
     }))
 
     const geminiBody = {
@@ -304,7 +300,7 @@ function claudeToOpenAI(claudeBody) {
         model: model,
         messages: claudeBody.messages.map(msg => ({
             role: msg.role,
-            content: typeof msg.content === 'string' ? msg.content : msg.content[0]?.text || ''
+            content: msg.content
         }))
     }
 
@@ -358,7 +354,7 @@ function claudeToQwen(claudeBody) {
         model: model,
         messages: claudeBody.messages.map(msg => ({
             role: msg.role,
-            content: typeof msg.content === 'string' ? msg.content : msg.content[0]?.text || ''
+            content: msg.content
         }))
     }
 
