@@ -1,0 +1,22 @@
+name = "claude-worker-proxy"
+type = "javascript"
+account_id = "2a35af424f8734e497a5d707344d79d5"
+workers_dev = true
+compatibility_date = "2025-08-10"
+
+[vars]
+DEFAULT_TIMEOUT_MS = "15000"
+REQUEST_TIMEOUT_MS = "30000"
+
+# Environment variables for API keys (set via wrangler secret)
+# Use: wrangler secret put ANYROUTER_API_KEY
+# Use: wrangler secret put GEMINI_API_KEY
+# Use: wrangler secret put OPENAI_API_KEY
+# Use: wrangler secret put QWEN_API_KEY
+# Use: wrangler secret put CLAUDE_API_KEY
+
+# Base URLs (can be overridden)
+ANYROUTER_BASE_URL = "https://anyrouter.top"
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com"
+OPENAI_BASE_URL = "https://api.openai.com"
+QWEN_BASE_URL = "https://dashscope.aliyuncs.com"

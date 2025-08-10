@@ -40,6 +40,22 @@ async function handle(request: Request): Promise<Response> {
         return new Response('Missing x-api-key header', { status: 401 })
     }
 
+    // Handle AnyRouter as a special case (passthrough)
+    if (typeParam === 'anyrouter') {
+        const targetUrl = 'https://' + baseUrl + '/v1/messages'
+        const headers = new Headers(request.headers)
+        headers.set('Authorization', `Bearer ${apiKey}`)
+        headers.delete('x-api-key')
+
+        const proxyRequest = new Request(targetUrl, {
+            method: request.method,
+            headers: headers,
+            body: request.body
+        })
+
+        return await fetch(proxyRequest)
+    }
+
     let provider: provider.Provider
     switch (typeParam) {
         case 'gemini':
