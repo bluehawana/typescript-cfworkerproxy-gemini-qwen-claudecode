@@ -76,7 +76,8 @@ export class impl implements provider.Provider {
         }
 
         if (claudeRequest.max_tokens) {
-            qwenRequest.parameters.max_tokens = claudeRequest.max_tokens
+            // Qwen has a max_tokens limit of 8192
+            qwenRequest.parameters.max_tokens = Math.min(claudeRequest.max_tokens, 8192)
         }
 
         if (claudeRequest.temperature !== undefined) {
