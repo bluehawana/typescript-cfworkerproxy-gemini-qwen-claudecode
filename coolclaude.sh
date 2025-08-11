@@ -47,6 +47,7 @@ show_usage() {
     echo ""
     echo -e "${YELLOW}Options:${NC}"
     echo "  -p, --provider [anyrouter|gemini|qwen]  Choose provider (default: anyrouter)"
+    echo "  -anyrouter                              Start AnyRouter Claude CLI directly"
     echo "  -s, --status                            Show current provider status"
     echo "  -t, --test                              Test all providers"
     echo "  -h, --help                              Show this help"
@@ -55,6 +56,7 @@ show_usage() {
     echo "  coolclaude \"Hello, how are you?\""
     echo "  coolclaude -p gemini \"What's the weather like?\""
     echo "  coolclaude -p qwen \"Translate this to Chinese\""
+    echo "  coolclaude -anyrouter                   # Start AnyRouter Claude CLI"
     echo "  coolclaude -s"
     echo ""
     echo -e "${GREEN}💰 Cost: FREE tokens! No paid Claude API needed!${NC}"
@@ -164,6 +166,15 @@ case "$1" in
     -t|--test)
         test_all
         exit 0
+        ;;
+    -anyrouter)
+        echo -e "${CYAN}🚀 Starting AnyRouter Claude CLI...${NC}"
+        echo -e "${GREEN}💡 This uses the official Claude CLI with AnyRouter backend${NC}"
+        echo ""
+        # Get the directory where this script is located
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        # Execute the anyrouter interactive script
+        exec "${SCRIPT_DIR}/anyrouter-interactive.sh"
         ;;
     -p|--provider)
         if [ -z "$2" ] || [ -z "$3" ]; then

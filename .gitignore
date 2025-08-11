@@ -211,3 +211,14 @@ vite.config.ts.timestamp-*
 docs/
 .claude/
 CLAUDE.md
+# API Keys and Secrets
+*.env
+*.env.local
+*.env.production
+**/settings.json
+**/.claude/settings.json
+
+# Sensitive scripts
+**/setup_claude_cli.sh
+**/deploy_*_heroku.sh
+

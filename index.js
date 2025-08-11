@@ -8,7 +8,7 @@ let requestsInCurrentSecond = 0
 let currentSecond = Math.floor(Date.now() / 1000)
 
 // 支持的提供商列表
-const SUPPORTED_PROVIDERS = ['anthropic', 'gemini', 'openai', 'qwen', 'anyrouter']
+const SUPPORTED_PROVIDERS = ['anthropic', 'gemini', 'openai', 'qwen', 'anyrouter', 'cerebras']
 
 // 模型名称映射
 const MODEL_MAPPINGS = {
@@ -29,6 +29,12 @@ const MODEL_MAPPINGS = {
         'claude-3-5-sonnet': 'qwen-max',
         'claude-3-haiku': 'qwen-turbo',
         'claude-3-opus': 'qwen-plus'
+    },
+    cerebras: {
+        'claude-3-5-sonnet-20241022': 'llama3.1-70b',
+        'claude-3-5-sonnet': 'llama3.1-70b',
+        'claude-3-haiku': 'llama3.1-8b',
+        'claude-3-opus': 'llama3.1-70b'
     }
 }
 
@@ -47,7 +53,20 @@ async function handleRequest(request) {
     try {
         const url = new URL(request.url)
 
-        // Only allow POST requests
+        // Add version endpoint for debugging (allow GET)
+        if (url.pathname === '/version' || url.pathname === '/health') {
+            return new Response(JSON.stringify({
+                version: '2.0.0',
+                timestamp: new Date().toISOString(),
+                status: 'ok',
+                features: ['multi-header-auth', 'debug-logging'],
+                method: request.method
+            }), {
+                headers: { 'Content-Type': 'application/json' }
+            })
+        }
+
+        // Only allow POST requests for API endpoints
         if (request.method !== 'POST') {
             return new Response('Method Not Allowed', { status: 405 })
         }
@@ -84,10 +103,24 @@ async function handleRequest(request) {
             providerUrl = 'https://' + providerUrl
         }
 
-        // 获取自定义x-api-key头
-        const apiKey = request.headers.get('x-api-key')
+        // 获取API key - 支持多种头格式
+        let apiKey = request.headers.get('x-api-key')
+        
+        // 如果没有x-api-key，尝试从Authorization头获取
         if (!apiKey) {
-            return new Response('Missing x-api-key header', { status: 400 })
+            const authHeader = request.headers.get('authorization')
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                apiKey = authHeader.substring(7) // 移除 "Bearer " 前缀
+            }
+        }
+        
+        // 如果没有x-api-key，尝试从anthropic-api-key头获取
+        if (!apiKey) {
+            apiKey = request.headers.get('anthropic-api-key')
+        }
+        
+        if (!apiKey) {
+            return new Response('Missing API key (x-api-key, Authorization Bearer, or anthropic-api-key header)', { status: 401 })
         }
 
         // 请求体JSON
@@ -115,7 +148,18 @@ async function handleRequest(request) {
                 headers = {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${apiKey}`,
-                    'User-Agent': 'claude-worker-proxy/1.0'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Origin': 'https://anyrouter.top',
+                    'Referer': 'https://anyrouter.top/',
+                    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                    'Sec-Ch-Ua-Mobile': '?0',
+                    'Sec-Ch-Ua-Platform': '"macOS"',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'same-origin'
                 }
                 break
 
@@ -145,6 +189,17 @@ async function handleRequest(request) {
                 // 转换为 Qwen 格式
                 const qwenBody = claudeToQwen(body)
                 processedBody = qwenBody
+                targetUrl = providerUrl
+                headers = {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`
+                }
+                break
+
+            case 'cerebras':
+                // 转换为 Cerebras 格式 (OpenAI 兼容)
+                const cerebrasBody = claudeToOpenAI(body)
+                processedBody = cerebrasBody
                 targetUrl = providerUrl
                 headers = {
                     'Content-Type': 'application/json',
@@ -214,6 +269,9 @@ async function handleRequest(request) {
                             break
                         case 'qwen':
                             claudeResponse = qwenToClaude(responseBody)
+                            break
+                        case 'cerebras':
+                            claudeResponse = openaiToClaude(responseBody)
                             break
                     }
 
